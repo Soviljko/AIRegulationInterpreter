@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ServiceManifest Name="LLMServicePkg"
+                 Version="1.0.0"
+                 xmlns="http://schemas.microsoft.com/2011/01/fabric"
+                 xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ServiceTypes>
+    <StatelessServiceType ServiceTypeName="LLMServiceType" />
+  </ServiceTypes>
+
+  <CodePackage Name="Code" Version="1.0.0">
+    <EntryPoint>
+      <ExeHost>
+        <Program>LLMService.exe</Program>
+      </ExeHost>
+    </EntryPoint>
+    <EnvironmentVariables>
+      <EnvironmentVariable Name="OPENAI_API_KEY" Value="" />
+    </EnvironmentVariables>
+  </CodePackage>
+
+  <ConfigPackage Name="Config" Version="1.0.0" />
+
+  <Resources>
+    <Endpoints>
+      <Endpoint Name="ServiceEndpoint" Protocol="http" Type="Input" />
+    </Endpoints>
+  </Resources>
+</ServiceManifest>

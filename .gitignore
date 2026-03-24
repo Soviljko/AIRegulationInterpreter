@@ -1,0 +1,25 @@
+# Build output
+**/bin/
+**/obj/
+**/pkg/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Service Fabric
+**/pkg/
+
+# API ključevi - NIKAD ne commitovati!
+**/ApplicationParameters/Local.1Node.xml
+**/ApplicationParameters/Local.5Node.xml
+
+# Azurite lokalni podaci
+c:/azurite/
+
+# NuGet packages
+packages/
+
+# Backup fajlovi
+*.Backup.tmp

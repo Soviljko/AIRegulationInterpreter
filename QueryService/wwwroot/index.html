@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Regulation Interpreter</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Segoe UI, sans-serif; background: #f0f2f5; color: #333; }
+        header { background: #1a4a8a; color: white; padding: 16px 32px; }
+        header h1 { font-size: 1.4rem; }
+        header p { font-size: 0.85rem; opacity: 0.8; margin-top: 4px; }
+        .tabs { display: flex; background: #fff; border-bottom: 2px solid #e0e0e0; padding: 0 32px; }
+        .tab { padding: 14px 24px; cursor: pointer; font-weight: 500; color: #666; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+        .tab.active { color: #1a4a8a; border-bottom-color: #1a4a8a; }
+        .content { max-width: 900px; margin: 32px auto; padding: 0 16px; }
+        .panel { display: none; }
+        .panel.active { display: block; }
+        .card { background: white; border-radius: 8px; padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 6px; color: #555; }
+        input, textarea, select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; margin-bottom: 14px; }
+        textarea { resize: vertical; min-height: 120px; }
+        button { background: #1a4a8a; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 500; }
+        button:hover { background: #153d73; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .result { margin-top: 20px; padding: 16px; border-radius: 8px; background: #f8f9ff; border-left: 4px solid #1a4a8a; }
+        .result h3 { margin-bottom: 10px; color: #1a4a8a; }
+        .confidence { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; margin-bottom: 12px; }
+        .conf-high { background: #d4edda; color: #155724; }
+        .conf-mid { background: #fff3cd; color: #856404; }
+        .conf-low { background: #f8d7da; color: #721c24; }
+        .citation { background: white; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; margin-top: 8px; }
+        .citation-id { font-size: 0.8rem; color: #888; font-family: monospace; }
+        .citation-title { font-weight: 600; margin: 4px 0; }
+        .citation-text { font-size: 0.9rem; color: #555; font-style: italic; }
+        .doc-list table { width: 100%; border-collapse: collapse; }
+        .doc-list th { background: #f5f5f5; padding: 10px 12px; text-align: left; font-size: 0.85rem; color: #666; }
+        .doc-list td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+        .error { color: #c0392b; background: #fdecea; padding: 12px; border-radius: 6px; margin-top: 12px; }
+        .success { color: #155724; background: #d4edda; padding: 12px; border-radius: 6px; margin-top: 12px; }
+        .spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 8px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>AI Regulation &amp; Policy Interpreter</h1>
+        <p>Ask questions about laws, regulations, or internal policies</p>
+    </header>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('query')">Ask a Question</div>
+        <div class="tab" onclick="switchTab('upload')">Upload Document</div>
+        <div class="tab" onclick="switchTab('documents')">Documents</div>
+    </div>
+
+    <div class="content">
+
+        <!-- PANEL: Query -->
+        <div id="panel-query" class="panel active">
+            <div class="card">
+                <label>Your Question</label>
+                <textarea id="question" placeholder="e.g. What are the conditions for annual leave? What is the minimum wage?"></textarea>
+                <label>Context Date (optional)</label>
+                <input type="date" id="contextDate">
+                <button onclick="submitQuery()" id="btnQuery">Submit Question</button>
+            </div>
+            <div id="queryResult"></div>
+        </div>
+
+        <!-- PANEL: Upload -->
+        <div id="panel-upload" class="panel">
+            <div class="card">
+                <label>Document Title</label>
+                <input type="text" id="docTitle" placeholder="e.g. Labor Law, Internal Policy">
+                <div class="row">
+                    <div>
+                        <label>Document Type</label>
+                        <input type="text" id="docType" placeholder="e.g. Law, Regulation, Policy">
+                    </div>
+                    <div>
+                        <label>Valid From</label>
+                        <input type="date" id="validFrom">
+                    </div>
+                </div>
+                <label>Document Content</label>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                    <label for="fileInput" style="margin:0; cursor:pointer; background:#e8f0fe; color:#1a4a8a; border:1px dashed #1a4a8a; border-radius:6px; padding:8px 16px; font-size:0.9rem; font-weight:500;">
+                        📄 Load from .txt file
+                    </label>
+                    <input type="file" id="fileInput" accept=".txt" style="display:none" onchange="loadTextFile(event)">
+                    <span id="fileName" style="font-size:0.85rem; color:#888;">or paste text below</span>
+                </div>
+                <textarea id="docContent" style="min-height:200px" placeholder="Enter document text. For structure recognition use: 'Član 1', 'Stav 1'..."></textarea>
+                <button onclick="uploadDocument()" id="btnUpload">Upload Document</button>
+                <div id="uploadResult"></div>
+            </div>
+        </div>
+
+        <!-- PANEL: Documents -->
+        <div id="panel-documents" class="panel">
+            <div class="card doc-list">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <strong>Uploaded Documents</strong>
+                    <button onclick="loadDocuments()" style="padding:6px 16px; font-size:0.85rem;">Refresh</button>
+                </div>
+                <div id="docTable"><p style="color:#888">Click Refresh to view documents.</p></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function loadTextFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('docContent').value = e.target.result;
+                document.getElementById('fileName').textContent = file.name;
+                if (!document.getElementById('docTitle').value) {
+                    document.getElementById('docTitle').value = file.name.replace('.txt', '');
+                }
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        function switchTab(name) {
+            document.querySelectorAll('.tab').forEach((t, i) => {
+                const panels = ['query', 'upload', 'documents'];
+                t.classList.toggle('active', panels[i] === name);
+            });
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('panel-' + name).classList.add('active');
+            if (name === 'documents') loadDocuments();
+        }
+
+        async function submitQuery() {
+            const question = document.getElementById('question').value.trim();
+            if (!question) return alert('Please enter a question.');
+
+            const btn = document.getElementById('btnQuery');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Processing...';
+            document.getElementById('queryResult').innerHTML = '';
+
+            const contextDate = document.getElementById('contextDate').value || null;
+
+            try {
+                const res = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question, contextDate })
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    document.getElementById('queryResult').innerHTML = `<div class="error">${data.title || 'Error'}</div>`;
+                    return;
+                }
+
+                const confClass = data.confidence >= 70 ? 'conf-high' : data.confidence >= 40 ? 'conf-mid' : 'conf-low';
+                const citations = (data.citations || []).map(c => `
+                    <div class="citation">
+                        <div class="citation-id">${c.sectionId}</div>
+                        <div class="citation-title">${c.sectionTitle}</div>
+                        <div class="citation-text">"${c.relevantText}"</div>
+                    </div>`).join('');
+
+                document.getElementById('queryResult').innerHTML = `
+                    <div class="result">
+                        <h3>Answer</h3>
+                        <span class="confidence ${confClass}">Confidence: ${data.confidence}%</span>
+                        <p style="line-height:1.6; margin-bottom:12px">${data.explanation}</p>
+                        ${citations ? `<strong>References:</strong>${citations}` : ''}
+                    </div>`;
+            } catch (e) {
+                document.getElementById('queryResult').innerHTML = `<div class="error">Error: ${e.message}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Submit Question';
+            }
+        }
+
+        async function uploadDocument() {
+            const title = document.getElementById('docTitle').value.trim();
+            const content = document.getElementById('docContent').value.trim();
+            const documentType = document.getElementById('docType').value.trim();
+            const validFrom = document.getElementById('validFrom').value;
+
+            if (!title || !content) return alert('Title and content are required.');
+
+            const btn = document.getElementById('btnUpload');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Uploading...';
+            document.getElementById('uploadResult').innerHTML = '';
+
+            try {
+                const res = await fetch('/api/documents', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title,
+                        content,
+                        documentType: documentType || 'Document',
+                        validFrom: validFrom || new Date().toISOString(),
+                        validTo: null
+                    })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    document.getElementById('uploadResult').innerHTML = `<div class="success">Document uploaded! ID: <strong>${data.documentId}</strong></div>`;
+                    document.getElementById('docTitle').value = '';
+                    document.getElementById('docContent').value = '';
+                } else {
+                    document.getElementById('uploadResult').innerHTML = `<div class="error">${data.title || 'Upload error'}</div>`;
+                }
+            } catch (e) {
+                document.getElementById('uploadResult').innerHTML = `<div class="error">Error: ${e.message}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Upload Document';
+            }
+        }
+
+        async function loadDocuments() {
+            document.getElementById('docTable').innerHTML = '<p style="color:#888">Loading...</p>';
+            try {
+                const res = await fetch('/api/documents');
+                const docs = await res.json();
+
+                if (!docs || docs.length === 0) {
+                    document.getElementById('docTable').innerHTML = '<p style="color:#888">No documents uploaded.</p>';
+                    return;
+                }
+
+                const rows = docs.map(d => `
+                    <tr>
+                        <td><strong>${d.title}</strong></td>
+                        <td>${d.documentType}</td>
+                        <td>${d.documentId}</td>
+                        <td>${new Date(d.validFrom).toLocaleDateString('en-US')}</td>
+                        <td>${d.sections ? d.sections.length : 0} sections</td>
+                    </tr>`).join('');
+
+                document.getElementById('docTable').innerHTML = `
+                    <table>
+                        <thead><tr><th>Title</th><th>Type</th><th>ID</th><th>Valid From</th><th>Sections</th></tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>`;
+            } catch (e) {
+                document.getElementById('docTable').innerHTML = `<div class="error">Error: ${e.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
